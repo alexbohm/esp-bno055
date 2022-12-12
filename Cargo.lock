@@ -228,6 +228,7 @@ dependencies = [
  "bno055",
  "embedded-sdmmc",
  "esp-backtrace",
+ "esp-println",
  "esp32c3-hal",
  "heapless",
  "mint",

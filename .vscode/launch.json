@@ -6,7 +6,7 @@
             "type": "probe-rs-debug",
             "request": "launch",
             "name": "probe_rs VSCode Launch",
-            // "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
             // "speed": 24000, //!MODIFY (or remove)
             "chip": "ESP32C3", //!MODIFY
             // "probe": "PID:VID:<Serial>", //!MODIFY (or remove)
@@ -22,7 +22,7 @@
                 "resetAfterFlashing": true,
                 "haltAfterReset": true,
             },
-            "consoleLogLevel": "Debug" //Error, Warn, Info, Debug, Trace
+            "consoleLogLevel": "Warn" //Error, Warn, Info, Debug, Trace
         },
         {
             "preLaunchTask": "${defaultBuildTask}", //Configure a default build task for 'cargo build'
@@ -30,7 +30,7 @@
             "request": "launch",
             "name": "probe_rs Server attach example",
             "server": "127.0.0.1:50000", //!MODIFY ... can be a server that is remote from the VSCode session, but local to the probe
-            // "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
             // "speed": 24000, //!MODIFY (or remove)
             "chip": "ESP32C3", //!MODIFY
             // "probe": "PID:VID:<Serial>", //!MODIFY (or remove)
@@ -46,7 +46,7 @@
                 "resetAfterFlashing": true,
                 "haltAfterReset": true,
             },
-            "consoleLogLevel": "Debug" //Error, Warn, Info, Debug, Trace
+            "consoleLogLevel": "Warn" //Error, Warn, Info, Debug, Trace
         }
     ]
 }

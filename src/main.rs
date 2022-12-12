@@ -17,6 +17,7 @@ use esp32c3_hal::{
     Delay, Rtc, UsbSerialJtag, IO,
 };
 use esp_backtrace as _;
+use esp_println::println;
 use heapless::String;
 use smart_leds::{SmartLedsWrite, RGB8};
 
@@ -33,15 +34,6 @@ impl embedded_sdmmc::TimeSource for EspTimeSource {
             seconds: 0,
         }
     }
-}
-
-macro_rules! maybe_log {
-    () => {
-        // writeln!(UsbSerialJtag)
-    };
-    ($($arg:tt)*) => {
-        // if let Ok(_) = writeln!(UsbSerialJtag, $($arg)*){}
-    };
 }
 
 #[riscv_rt::entry]
@@ -152,12 +144,12 @@ fn main() -> ! {
 
     // loop {
     //     let value = read_thermistor_c();
-    //     maybe_log!("Thermistor: {}C", value);
+    //     println!("Thermistor: {}C", value);
     // }
     // ////////////////////////////////////////
     // Initialize non-volatile storage.
     // ////////////////////////////////////////
-    maybe_log!("Initializing SD Card...");
+    println!("Initializing SD Card...");
     led.write(BLUE.iter().cloned()).unwrap();
 
     // Initialize the SPI lines.
@@ -185,7 +177,7 @@ fn main() -> ! {
     sd_card.device().init().unwrap();
 
     let size = sd_card.device().card_size_bytes().unwrap();
-    maybe_log!("Found SD Card:\n    size: {}", size);
+    println!("Found SD Card:\n    size: {}", size);
 
     let mut volume = sd_card.get_volume(embedded_sdmmc::VolumeIdx(0)).unwrap();
 
@@ -203,7 +195,7 @@ fn main() -> ! {
     // ////////////////////////////////////////
     // Initialize the IMU.
     // ////////////////////////////////////////
-    maybe_log!("Initializing IMU...");
+    println!("Initializing IMU...");
 
     let i2c = I2C::new(
         peripherals.I2C0,
@@ -242,7 +234,7 @@ fn main() -> ! {
 
     // Wait for the imu to become calibrated.
     {
-        maybe_log!("Waiting for calibration...");
+        println!("Waiting for calibration...");
 
         while !imu.is_fully_calibrated().unwrap() {
             if color_toggle {
@@ -259,7 +251,7 @@ fn main() -> ! {
     // ////////////////////////////////////////
     // Take measurements.
     // ////////////////////////////////////////
-    maybe_log!("Taking measurements...");
+    println!("Taking measurements...");
 
     let mut buffer: String<44> = String::new();
     loop {
@@ -269,7 +261,7 @@ fn main() -> ! {
             let z = &quat.v.z;
             let s = &quat.s;
 
-            maybe_log!("{{\"v\":{{\"x\":{x:.7},\"y\":{y:.7},\"z\":{z:.7}}},\"s\":{s:.7}}}");
+            println!("{{\"v\":{{\"x\":{x:.7},\"y\":{y:.7},\"z\":{z:.7}}},\"s\":{s:.7}}}");
 
             buffer.clear();
             writeln!(buffer, "{x:.7},{y:.7},{z:.7},{s:.7}").unwrap();
@@ -310,9 +302,9 @@ fn main() -> ! {
         }
     }
 
-    maybe_log!("Closing out file.");
+    println!("Closing out file.");
     sd_card.close_file(&volume, file).unwrap();
-    maybe_log!("Done writing file.");
+    println!("Done writing file.");
 
     color_toggle = true;
     loop {
