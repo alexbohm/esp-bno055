@@ -6,23 +6,26 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-esp32c3-hal = { version = "0.2.0", features = ["smartled", "direct-boot"] }
+esp32c3-hal = { version = "0.4.0", features = [
+    "smartled",
+    "direct-boot",
+], path = "../esp-hal/esp32c3-hal" }
 
-esp-backtrace = { version = "0.2.0", features = [
+esp-backtrace = { version = "0.4.0", features = [
     "esp32c3",
     "panic-handler",
     # "print-jtag-serial",
     "print-uart",
 ] }
+riscv-rt = { version = "0.10", optional = true }
 
-riscv-rt = { version = "0.9", optional = true }
 bno055 = "0.3.3"
 mint = "0.5.9"
 # littlefs2 = { version = "0.3.2", features = ["c-stubs"] }
 embedded-sdmmc = "0.3.0"
 heapless = "0.7.16"
 smart-leds = "0.3.0"
-esp-println = { version = "0.2.2", features = ["esp32c3"] }
+esp-println = { version = "0.3.1", features = ["esp32c3"] }
 
 # Patch until version is released.
 # [patch.crates-io]

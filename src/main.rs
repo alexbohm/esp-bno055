@@ -8,7 +8,7 @@ use esp32c3_hal::{
     analog::SarAdcExt,
     clock::ClockControl,
     i2c::I2C,
-    pac::Peripherals,
+    peripherals::Peripherals,
     prelude::*,
     pulse_control::{ClockSource, PulseControl},
     spi::{Spi, SpiMode},
@@ -38,7 +38,7 @@ impl embedded_sdmmc::TimeSource for EspTimeSource {
 
 #[riscv_rt::entry]
 fn main() -> ! {
-    let peripherals = Peripherals::take().unwrap();
+    let peripherals = Peripherals::take();
     let mut system = peripherals.SYSTEM.split();
     // let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
     let clocks = ClockControl::configure(
@@ -62,6 +62,10 @@ fn main() -> ! {
     let mut delay = Delay::new(&clocks);
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+
+    // GPIO1
+    let mut gpio1 = io.pins.gpio1.into_push_pull_output();
+    gpio1.set_low().unwrap();
 
     // Onboard button.
     let onboard_button = io.pins.gpio9.into_pull_up_input();
@@ -204,13 +208,15 @@ fn main() -> ! {
         400u32.kHz(),
         &mut system.peripheral_clock_control,
         &clocks,
-    )
-    .unwrap();
+    );
 
     let mut imu = bno055::Bno055::new(i2c).with_alternative_address();
     // delay.delay_ms(600u32);
 
-    imu.init(&mut delay).unwrap();
+    gpio1.set_high().unwrap();
+    let result = imu.init(&mut delay);
+    gpio1.set_low().unwrap();
+    result.unwrap();
 
     // let mut try_init = || -> Result<(), bno055::Error<esp32c3_hal::i2c::Error>> {
     //     for _ in 0..5 {
