@@ -1,25 +1,31 @@
 #![no_std]
 #![no_main]
+#![feature(type_alias_impl_trait)]
 
 use core::fmt::Write;
-
+use embassy_executor::Executor;
+use embassy_time::{Duration, Timer};
 use esp32c3_hal::{
-    adc::{AdcConfig, ADC, ADC1},
-    analog::SarAdcExt,
+    // adc::{AdcConfig, ADC, ADC1},
+    // analog::SarAdcExt,
     clock::ClockControl,
     i2c::I2C,
     peripherals::Peripherals,
     prelude::*,
     pulse_control::{ClockSource, PulseControl},
     spi::{Spi, SpiMode},
+    system::SystemParts,
     timer::TimerGroup,
     utils::{smartLedAdapter, SmartLedsAdapter},
-    Delay, Rtc, UsbSerialJtag, IO,
+    Delay,
+    Rtc,
+    IO,
 };
 use esp_backtrace as _;
 use esp_println::println;
 use heapless::String;
 use smart_leds::{SmartLedsWrite, RGB8};
+use static_cell::StaticCell;
 
 struct EspTimeSource;
 
@@ -36,16 +42,62 @@ impl embedded_sdmmc::TimeSource for EspTimeSource {
     }
 }
 
-#[riscv_rt::entry]
-fn main() -> ! {
+// static EXECUTOR: StaticCell<Executor> = StaticCell::new();
+
+// #[riscv_rt::entry]
+// fn entry() -> ! {
+//     let peripherals = Peripherals::take();
+//     let mut system: SystemParts = peripherals.SYSTEM.split();
+
+//     let clocks = ClockControl::configure(
+//         system.clock_control,
+//         esp32c3_hal::clock::CpuClock::Clock160MHz,
+//     )
+//     .freeze();
+
+//     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
+//     let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+//     let mut wdt0 = timer_group0.wdt;
+//     let timer_group1 = TimerGroup::new(peripherals.TIMG1, &clocks);
+//     let mut wdt1 = timer_group1.wdt;
+
+//     // Disable watchdog timers
+//     rtc.swd.disable();
+//     rtc.rwdt.disable();
+//     wdt0.disable();
+//     wdt1.disable();
+
+//     esp32c3_hal::embassy::init(
+//         &clocks,
+//         esp32c3_hal::systimer::SystemTimer::new(peripherals.SYSTIMER),
+//     );
+
+//     let executor = EXECUTOR.init(Executor::new());
+//     executor.run(|_| {});
+// }
+
+#[embassy_executor::main]
+async fn main(_spawner: embassy_executor::Spawner) -> ! {
+    // ////////////////////////////////////////
+    // Initialize embassy.
+    // ////////////////////////////////////////
     let peripherals = Peripherals::take();
-    let mut system = peripherals.SYSTEM.split();
-    // let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
+
+    let mut system: SystemParts = peripherals.SYSTEM.split();
+
     let clocks = ClockControl::configure(
         system.clock_control,
         esp32c3_hal::clock::CpuClock::Clock160MHz,
     )
     .freeze();
+
+    esp32c3_hal::embassy::init(
+        &clocks,
+        esp32c3_hal::systimer::SystemTimer::new(peripherals.SYSTIMER),
+    );
+    // ////////////////////////////////////////
+    // "Normal Main"
+    // ////////////////////////////////////////
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
     let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
@@ -59,9 +111,9 @@ fn main() -> ! {
     wdt0.disable();
     wdt1.disable();
 
-    let mut delay = Delay::new(&clocks);
-
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+
+    let mut delay = embassy_time::Delay {};
 
     // GPIO1
     let mut gpio1 = io.pins.gpio1.into_push_pull_output();

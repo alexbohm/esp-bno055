@@ -9,6 +9,8 @@ license = "MIT OR Apache-2.0"
 esp32c3-hal = { version = "0.4.0", features = [
     "smartled",
     "direct-boot",
+    "embassy",
+    "embassy-time-systick",
 ], path = "../esp-hal/esp32c3-hal" }
 
 esp-backtrace = { version = "0.4.0", features = [
@@ -26,6 +28,12 @@ embedded-sdmmc = "0.3.0"
 heapless = "0.7.16"
 smart-leds = "0.3.0"
 esp-println = { version = "0.3.1", features = ["esp32c3"] }
+embassy-time = { version = "0.1.0", features = ["nightly"] }
+embassy-executor = { package = "embassy-executor", git = "https://github.com/embassy-rs/embassy/", rev = "ebc735008f0b1725b22c944cc5f95fe1aacc665b", features = [
+    "nightly",
+    "integrated-timers",
+] }
+static_cell = "1.0.0"
 
 # Patch until version is released.
 # [patch.crates-io]
