@@ -15,6 +15,11 @@ use esp32c3_hal::{
 use esp_backtrace as _;
 use esp_println::println;
 use heapless::String;
+
+mod sdmmc_proto;
+mod spi_block_device;
+mod structure;
+
 struct EspTimeSource;
 
 impl embedded_sdmmc::TimeSource for EspTimeSource {
@@ -87,11 +92,12 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
     let mosi = io.pins.gpio5;
     let cs = io.pins.gpio4.into_push_pull_output();
 
-    let spi = Spi::new_no_cs(
+    let spi = Spi::new(
         peripherals.SPI2,
         sclk,
         mosi,
         miso,
+        cs,
         400u32.kHz(),
         SpiMode::Mode0,
         &mut system.peripheral_clock_control,
@@ -101,15 +107,16 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
     let timesource = EspTimeSource {};
 
     let mut sd_card =
-        embedded_sdmmc::Controller::new(embedded_sdmmc::SdMmcSpi::new(spi, cs), timesource);
+        embedded_sdmmc::Controller::new(spi_block_device::SdMmcSpi::new(spi), timesource);
 
     // Initialize the sd card.
     sd_card.device().init().unwrap();
+
     // After initialization, we can boost the frequency of the bus.
     sd_card
         .device()
         .spi()
-        .change_bus_frequency(80u32.MHz(), &clocks);
+        .change_bus_frequency(15u32.MHz(), &clocks);
 
     let size = sd_card.device().card_size_bytes().unwrap();
     println!("Found SD Card:\n    size: {}", size);
@@ -153,7 +160,7 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
                     written += bytes_written;
                 }
                 Err(embedded_sdmmc::Error::DeviceError(
-                    embedded_sdmmc::SdMmcError::TimeoutWaitNotBusy,
+                    spi_block_device::Error::TimeoutWaitNotBusy,
                 )) => {
                     busy_errors += 1;
                 }
