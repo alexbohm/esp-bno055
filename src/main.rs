@@ -16,9 +16,7 @@ use esp_backtrace as _;
 use esp_println::println;
 use heapless::String;
 
-mod sdmmc_proto;
-mod spi_block_device;
-mod structure;
+mod storage;
 
 struct EspTimeSource;
 
@@ -107,7 +105,7 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
     let timesource = EspTimeSource {};
 
     let mut sd_card =
-        embedded_sdmmc::Controller::new(spi_block_device::SdMmcSpi::new(spi), timesource);
+        embedded_sdmmc::Controller::new(storage::spi_block_device::SdMmcSpi::new(spi), timesource);
 
     // Initialize the sd card.
     sd_card.device().init().unwrap();
@@ -160,7 +158,7 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
                     written += bytes_written;
                 }
                 Err(embedded_sdmmc::Error::DeviceError(
-                    spi_block_device::Error::TimeoutWaitNotBusy,
+                    storage::spi_block_device::Error::TimeoutWaitNotBusy,
                 )) => {
                     busy_errors += 1;
                 }

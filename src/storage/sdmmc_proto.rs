@@ -27,7 +27,7 @@
 
 //==============================================================================
 
-use crate::structure::{access_field, define_field};
+use super::structure::{access_field, define_field};
 
 // Possible errors the SD card can return
 
