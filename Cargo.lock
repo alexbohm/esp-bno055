@@ -222,7 +222,7 @@ dependencies = [
  "critical-section",
  "embassy-sync 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embedded-hal 0.2.7",
- "embedded-hal-async",
+ "embedded-hal-async 0.1.0-alpha.3",
  "futures-util",
  "heapless",
 ]
@@ -285,6 +285,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-hal-async"
+version = "0.2.0-alpha.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "608a322808d65da06715e03109c0cb69f79a5459af756fba393ab83e875d4969"
+dependencies = [
+ "embedded-hal 1.0.0-alpha.9",
+]
+
+[[package]]
 name = "embedded-hal-nb"
 version = "1.0.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -309,6 +318,8 @@ checksum = "ef1a6892d9eef45c8fa6b9e0086428a2cca8491aca8f787c534a3d6d0bcb3ced"
 [[package]]
 name = "embedded-sdmmc"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d3bf0a2b5becb87e9a329d9290f131e4d10fec39b56d129926826a7cbea1e7a"
 dependencies = [
  "byteorder",
  "embedded-hal 0.2.7",
@@ -332,11 +343,13 @@ version = "0.4.0"
 dependencies = [
  "cfg-if",
  "critical-section",
+ "embassy-sync 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embassy-time 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embedded-can",
  "embedded-dma",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0-alpha.9",
+ "embedded-hal-async 0.2.0-alpha.0",
  "embedded-hal-nb",
  "esp-hal-procmacros",
  "esp32c3",
@@ -387,6 +400,7 @@ dependencies = [
  "embedded-can",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0-alpha.9",
+ "embedded-hal-async 0.1.0-alpha.3",
  "embedded-hal-nb",
  "esp-hal-common",
  "r0",

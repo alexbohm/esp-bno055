@@ -139,7 +139,7 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
     // ////////////////////////////////////////
 
     // Buffer of data to write.
-    let mut buffer: String<2048> = String::new();
+    let mut buffer: String<8192> = String::new();
     for _ in 0..buffer.capacity() / 16 {
         buffer.push_str("0123456789ABCDEF").unwrap();
     }

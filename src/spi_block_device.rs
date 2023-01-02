@@ -12,6 +12,11 @@ use embedded_sdmmc::{Block, BlockCount, BlockDevice, BlockIdx};
 
 const DEFAULT_DELAY_COUNT: u32 = 32_000;
 
+// A dummy write buffer used for writing out data when we are doing a read operation.
+// Must be 0xff.
+// TODO: ESP32
+static DUMMY_WRITE_BUFFER: [u8; 512] = [0xffu8; 512];
+
 /// Represents an SD Card interface built from an SPI peripheral and a Chip
 /// Select pin. We need Chip Select to be separate so we can clock out some
 /// bytes without Chip Select asserted (which puts the card into SPI mode).
@@ -23,6 +28,10 @@ where
     spi: RefCell<SPI>,
     card_type: CardType,
     state: State,
+
+    // TODO: some drivers seem to not properly work when given an empty read buffer to discard
+    // data. This is a location where we can just dump garbage read data.
+    garbage_read_buffer: RefCell<[u8; 512]>,
 }
 
 /// The possible errors `SdMmcSpi` can generate.
@@ -111,6 +120,7 @@ where
             // cs: RefCell::new(cs),
             card_type: CardType::SD1,
             state: State::NoInit,
+            garbage_read_buffer: RefCell::new([0x00u8; 512]),
         }
     }
 
@@ -315,8 +325,6 @@ where
     /// Read an arbitrary number of bytes from the card. Always fills the
     /// given buffer, so make sure it's the right size.
     fn read_data(&self, buffer: &mut [u8]) -> Result<(), Error> {
-        let write_buffer = [0xffu8; 512];
-
         // Get first non-FF byte.
         let mut delay = Delay::new();
         let status = loop {
@@ -333,16 +341,21 @@ where
         // for b in buffer.iter_mut() {
         //     *b = self.receive()?;
         // }
-        {
+        let crc = {
             let mut spi = self.spi.borrow_mut();
-            spi.transfer(buffer, &write_buffer[..buffer.len()])
+            spi.transfer(buffer, &DUMMY_WRITE_BUFFER[..buffer.len()])
                 .map_err(|_e| Error::Transport)?;
-            // spi.flush().map_err(|_e| Error::Transport)?;
-        }
 
-        let mut crc = u16::from(self.receive()?);
-        crc <<= 8;
-        crc |= u16::from(self.receive()?);
+            let mut crc_buffer = [0u8; 2];
+            spi.transfer(&mut crc_buffer, &DUMMY_WRITE_BUFFER[..2])
+                .map_err(|_e| Error::Transport)?;
+
+            u16::from_be_bytes(crc_buffer)
+        };
+
+        // let mut crc = u16::from(self.receive()?);
+        // crc <<= 8;
+        // crc |= u16::from(self.receive()?);
 
         // println!("Read Data Buffer: {buffer:?}");
 
@@ -356,8 +369,6 @@ where
 
     /// Write an arbitrary number of bytes to the card.
     fn write_data(&self, token: u8, buffer: &[u8]) -> Result<(), Error> {
-        let mut read_buffer = [0xffu8; 512];
-
         let calc_crc = crc16(buffer);
         self.send(token)?;
         // for &b in buffer.iter() {
@@ -366,12 +377,17 @@ where
 
         {
             let mut spi = self.spi.borrow_mut();
-            spi.transfer(&mut read_buffer[..buffer.len()], buffer)
+            let mut garbage_read_buffer = self.garbage_read_buffer.borrow_mut();
+
+            spi.transfer(&mut garbage_read_buffer[..buffer.len()], buffer)
                 .map_err(|_e| Error::Transport)?;
-            // spi.flush().map_err(|_e| Error::Transport)?;
+
+            spi.transfer(&mut garbage_read_buffer[..2], &calc_crc.to_be_bytes())
+                .map_err(|_e| Error::Transport)?;
         }
-        self.send((calc_crc >> 8) as u8)?;
-        self.send(calc_crc as u8)?;
+        // self.send((calc_crc >> 8) as u8)?;
+        // self.send(calc_crc as u8)?;
+
         let status = self.receive()?;
         if (status & DATA_RES_MASK) != DATA_RES_ACCEPTED {
             // println!("Data not accepted.");
@@ -407,7 +423,6 @@ where
         {
             let mut spi = self.spi.borrow_mut();
             spi.transfer(&mut [], &buf).map_err(|_e| Error::Transport)?;
-            // spi.flush().map_err(|_e| Error::Transport)?;
         }
 
         // skip stuff byte for stop read
@@ -448,7 +463,6 @@ where
 
         spi.transfer(&mut data, &[out])
             .map_err(|_e| Error::Transport)?;
-        // spi.flush().map_err(|_e| Error::Transport)?;
 
         Ok(data[0])
     }
